@@ -62,6 +62,7 @@ link_system_prompt += """
     ]
 }
 
+
 def get_links_user_prompt(website):
     user_prompt = f"Here is the list of links on the website of {website.url} - "
     user_prompt += "please decide which of these are relevant web links for a brochure about the company, respond with the full https URL in JSON format. \
@@ -104,3 +105,22 @@ def get_brochure_user_prompt(company_name, url):
     user_prompt = user_prompt[:5_000] # Truncate if more than 5,000 characters
     return user_prompt
 create_brochure("HuggingFace", "https://huggingface.co")
+
+def stream_brochure(company_name, url):
+    stream = openai.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": get_brochure_user_prompt(company_name, url)}
+          ],
+        stream=True
+    )
+    
+    response = ""
+    display_handle = display(Markdown(""), display_id=True)
+    for chunk in stream:
+        response += chunk.choices[0].delta.content or ''
+        response = response.replace("```","").replace("markdown", "")
+        update_display(Markdown(response), display_id=display_handle.display_id)
+
+stream_brochure("HuggingFace", "https://huggingface.co")
